@@ -1,7 +1,10 @@
 import {
+  BotIcon,
+  LayersIcon,
   MoreHorizontalIcon,
   PinIcon,
   PinOffIcon,
+  PlusIcon,
   SearchIcon,
   SettingsIcon,
   SquarePenIcon,
@@ -10,6 +13,7 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { EntityIcon } from "@/components/manage/entity-icon"
 import { ThreadStatusDot } from "@/components/thread-status"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import {
@@ -25,28 +29,36 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,
   SidebarMenu,
   SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useStore } from "@/data/store"
+import { useCreateFactory } from "@/data/use-create-factory"
 import type { Thread } from "@/data/types"
+import { href, navigate, useRoute } from "@/lib/router"
 import { bucketOrder, dateBucket, relativeTime } from "@/lib/time"
+import { cn } from "@/lib/utils"
+
 
 export function AppSidebar() {
-  const { threads, activeThread, selectThread } = useStore()
+  const { threads, factories } = useStore()
+  const route = useRoute()
+  const createFactory = useCreateFactory()
   const [query, setQuery] = useState("")
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
     const filtered = threads
-      .filter((t) => !q || t.title.toLowerCase().includes(q) || t.repo.toLowerCase().includes(q))
+      .filter((t) => !q || t.title.toLowerCase().includes(q))
       .sort((a, b) => b.updatedAt - a.updatedAt)
     const map = new Map<string, Thread[]>()
     const pinned = filtered.filter((t) => t.pinned)
@@ -73,15 +85,74 @@ export function AppSidebar() {
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => selectThread(null)} isActive={!activeThread} tooltip="New thread">
-              <SquarePenIcon />
-              <span>New thread</span>
-              <Kbd className="ml-auto">⌘N</Kbd>
+            <SidebarMenuButton asChild isActive={route.name === "home"} tooltip="New thread">
+              <a href={href({ name: "home" })}>
+                <SquarePenIcon />
+                <span>New thread</span>
+                <Kbd className="ml-auto">⌘N</Kbd>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={route.name === "workspaces"} tooltip="Workspaces">
+              <a href={href({ name: "workspaces" })}>
+                <LayersIcon />
+                <span>Workspaces</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={route.name === "agents"} tooltip="Agents">
+              <a href={href({ name: "agents" })}>
+                <BotIcon />
+                <span>Agents</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup className="py-1">
+          <SidebarGroupLabel>Factories</SidebarGroupLabel>
+          <SidebarGroupAction title="New factory" onClick={createFactory}>
+            <PlusIcon /> <span className="sr-only">New factory</span>
+          </SidebarGroupAction>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {factories.items.map((f) => {
+                const active = f.cards.filter((c) => c.active).length
+                return (
+                  <SidebarMenuItem key={f.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={route.name === "factories" && route.id === f.id}
+                      tooltip={`${f.name} · ${f.enabled ? "running" : "paused"}`}
+                    >
+                      <a href={href({ name: "factories", id: f.id })}>
+                        <EntityIcon icon={f.icon} color={f.color} size="sm" className={cn(!f.enabled && "opacity-50 grayscale")} />
+                        <span className={cn("truncate", !f.enabled && "text-muted-foreground")}>{f.name}</span>
+                      </a>
+                    </SidebarMenuButton>
+                    <SidebarMenuBadge className="gap-1.5">
+                      {f.enabled ? (
+                        <>
+                          {active > 0 && <span className="tabular-nums">{active}</span>}
+                          <span className="size-1.5 rounded-full bg-success" aria-label="Running" />
+                        </>
+                      ) : (
+                        <span className="text-[10px] uppercase tracking-wide">Off</span>
+                      )}
+                    </SidebarMenuBadge>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <div className="relative px-2 pt-2">
+          <SearchIcon className="pointer-events-none absolute left-4 top-[calc(50%+4px)] size-3.5 -translate-y-1/2 text-muted-foreground" />
           <SidebarInput
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -90,9 +161,6 @@ export function AppSidebar() {
             aria-label="Search threads"
           />
         </div>
-      </SidebarHeader>
-
-      <SidebarContent>
         {groups.length === 0 && (
           <p className="px-4 py-6 text-center text-xs text-muted-foreground">No threads match “{query}”.</p>
         )}
@@ -102,7 +170,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((t) => (
-                  <ThreadItem key={t.id} thread={t} active={t.id === activeThread?.id} />
+                  <ThreadItem key={t.id} thread={t} active={route.name === "thread" && route.id === t.id} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -129,12 +197,13 @@ export function AppSidebar() {
 }
 
 function ThreadItem({ thread, active }: { thread: Thread; active: boolean }) {
-  const { selectThread, togglePin, deleteThread } = useStore()
+  const { togglePin, deleteThread, workspaces } = useStore()
+  const ws = workspaces.items.find((w) => w.id === thread.workspaceId)
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={active}
-        onClick={() => selectThread(thread.id)}
+        onClick={() => navigate({ name: "thread", id: thread.id })}
         className="h-auto py-1.5"
         tooltip={thread.title}
       >
@@ -142,7 +211,7 @@ function ThreadItem({ thread, active }: { thread: Thread; active: boolean }) {
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate">{thread.title}</span>
           <span className="truncate text-xs text-muted-foreground">
-            {thread.repo.split("/")[1]} · {relativeTime(thread.updatedAt)}
+            {ws?.name ?? "Triage"} · {relativeTime(thread.updatedAt)}
           </span>
         </div>
       </SidebarMenuButton>

@@ -1,37 +1,61 @@
 import type { ChatStatus } from "ai"
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
 
-import { initialThreads, mockTriageReply, repos } from "./mock"
-import type { ChatMessage, MessagePart, Thread } from "./types"
+import { uid } from "@/lib/id"
+import { navigate, useRoute } from "@/lib/router"
+
+import { initialAgents, initialFactories, initialThreads, initialWorkspaces, mockTriageReply } from "./mock"
+import type { Agent, ChatMessage, Factory, FactoryCard, MessagePart, Thread, Workspace } from "./types"
+
+/** Generic in-memory CRUD for a list of `{ id }` records. */
+function useCollection<T extends { id: string }>(initial: T[]) {
+  const [items, setItems] = useState<T[]>(initial)
+  const update = useCallback((id: string, patch: Partial<T> | ((item: T) => Partial<T>)) => {
+    setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...(typeof patch === "function" ? patch(x) : patch) } : x)))
+  }, [])
+  const add = useCallback((item: T) => setItems((xs) => [...xs, item]), [])
+  const remove = useCallback((id: string) => setItems((xs) => xs.filter((x) => x.id !== id)), [])
+  return { items, setItems, update, add, remove }
+}
+
+export type Collection<T extends { id: string }> = Omit<ReturnType<typeof useCollection<T>>, "setItems">
 
 interface StoreValue {
+  /* Triage chat */
   threads: Thread[]
   activeThread: Thread | null
   /** Chat status of the active thread (drives the composer submit button). */
   status: ChatStatus
-  repo: string
-  setRepo: (repo: string) => void
-  selectThread: (id: string | null) => void
   sendMessage: (text: string) => void
   stop: () => void
   togglePin: (id: string) => void
   deleteThread: (id: string) => void
+
+  /* Managed entities */
+  workspaces: Collection<Workspace>
+  agents: Collection<Agent>
+  factories: Collection<Factory>
+  moveCard: (factoryId: string, cardId: string, column: FactoryCard["column"], beforeCardId?: string) => void
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
 
-const uid = () => Math.random().toString(36).slice(2, 10)
 const titleFrom = (text: string) => {
   const t = text.trim().replace(/\s+/g, " ")
   return t.length > 42 ? `${t.slice(0, 40)}…` : t
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const route = useRoute()
+  const activeId = route.name === "thread" ? route.id : null
+
   const [threads, setThreads] = useState<Thread[]>(initialThreads)
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [repo, setRepo] = useState(repos[0])
   const [statusById, setStatusById] = useState<Record<string, ChatStatus>>({})
   const timers = useRef<Record<string, number[]>>({})
+
+  const workspaces = useCollection(initialWorkspaces)
+  const agents = useCollection(initialAgents)
+  const factories = useCollection(initialFactories)
 
   const updateThread = useCallback((id: string, fn: (t: Thread) => Thread) => {
     setThreads((ts) => ts.map((t) => (t.id === id ? fn(t) : t)))
@@ -44,7 +68,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   /** Fake a streamed assistant response: parts appear one by one, text streams in chunks. */
   const simulateReply = useCallback(
     (threadId: string, prompt: string) => {
-      const parts = mockTriageReply(prompt)
+      const { parts, workspaceId, agentId } = mockTriageReply(prompt, workspaces.items, agents.items)
       const messageId = uid()
       const queue: number[] = []
       timers.current[threadId] = queue
@@ -87,8 +111,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           schedule(500, () => patchMessage((ps) => [...ps, { ...part, state: "input-available", output: undefined }]))
           if (part.state !== "input-available") {
             schedule(900, () =>
-              patchMessage((ps) => ps.map((p) => (p.type === "tool" && p.name === part.name && p.state === "input-available" ? part : p))),
+              patchMessage((ps) =>
+                ps.map((p) => (p.type === "tool" && p.name === part.name && p.state === "input-available" ? part : p)),
+              ),
             )
+          }
+          if (part.name === "select_workspace") {
+            schedule(0, () => updateThread(threadId, (th) => ({ ...th, workspaceId })))
           }
         } else {
           schedule(300, () => patchMessage((ps) => [...ps, part]))
@@ -97,10 +126,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       schedule(200, () => {
         setStatus(threadId, "ready")
-        updateThread(threadId, (th) => ({ ...th, routedTo: [...new Set([...th.routedTo, ...routed(parts)])] }))
+        updateThread(threadId, (th) => ({ ...th, routedTo: [...new Set([...th.routedTo, agentId])] }))
       })
     },
-    [setStatus, updateThread],
+    [agents.items, setStatus, updateThread, workspaces.items],
   )
 
   const sendMessage = useCallback(
@@ -114,21 +143,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const thread: Thread = {
           id: threadId,
           title: titleFrom(body),
-          repo,
           status: "running",
           routedTo: [],
           updatedAt: Date.now(),
           messages: [userMsg],
         }
         setThreads((ts) => [thread, ...ts])
-        setActiveId(threadId)
+        navigate({ name: "thread", id: threadId })
       } else {
         updateThread(threadId, (th) => ({ ...th, status: "running", updatedAt: Date.now(), messages: [...th.messages, userMsg] }))
       }
       setStatus(threadId, "submitted")
       simulateReply(threadId, body)
     },
-    [activeId, repo, setStatus, simulateReply, updateThread],
+    [activeId, setStatus, simulateReply, updateThread],
   )
 
   const stop = useCallback(() => {
@@ -144,10 +172,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [updateThread],
   )
 
-  const deleteThread = useCallback((id: string) => {
-    setThreads((ts) => ts.filter((t) => t.id !== id))
-    setActiveId((a) => (a === id ? null : a))
-  }, [])
+  const deleteThread = useCallback(
+    (id: string) => {
+      setThreads((ts) => ts.filter((t) => t.id !== id))
+      if (activeId === id) navigate({ name: "home" })
+    },
+    [activeId],
+  )
+
+  const { update: updateFactory } = factories
+  const moveCard = useCallback(
+    (factoryId: string, cardId: string, column: FactoryCard["column"], beforeCardId?: string) => {
+      updateFactory(factoryId, (f) => {
+        const moving = f.cards.find((c) => c.id === cardId)
+        if (!moving) return {}
+        const rest = f.cards.filter((c) => c.id !== cardId)
+        const moved = { ...moving, column, updatedAt: Date.now() }
+        const idx = beforeCardId ? rest.findIndex((c) => c.id === beforeCardId) : -1
+        if (idx === -1) {
+          // Append after the last card of the target column (keeps column order stable).
+          const lastIdx = rest.map((c) => c.column).lastIndexOf(column)
+          rest.splice(lastIdx + 1, 0, moved)
+        } else {
+          rest.splice(idx, 0, moved)
+        }
+        return { cards: rest }
+      })
+    },
+    [updateFactory],
+  )
 
   const value = useMemo<StoreValue>(() => {
     const activeThread = threads.find((t) => t.id === activeId) ?? null
@@ -155,21 +208,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       threads,
       activeThread,
       status: (activeId && statusById[activeId]) || "ready",
-      repo: activeThread?.repo ?? repo,
-      setRepo,
-      selectThread: setActiveId,
       sendMessage,
       stop,
       togglePin,
       deleteThread,
+      workspaces,
+      agents,
+      factories,
+      moveCard,
     }
-  }, [threads, activeId, statusById, repo, sendMessage, stop, togglePin, deleteThread])
+  }, [threads, activeId, statusById, sendMessage, stop, togglePin, deleteThread, workspaces, agents, factories, moveCard])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
-}
-
-function routed(parts: MessagePart[]) {
-  return parts.flatMap((p) => (p.type === "tool" && p.name === "route_to_agent" ? [p.input.agent as Thread["routedTo"][number]] : []))
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

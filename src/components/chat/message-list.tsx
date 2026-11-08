@@ -5,12 +5,13 @@ import { Message, MessageAction, MessageActions, MessageContent, MessageResponse
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning"
 import { Shimmer } from "@/components/ai-elements/shimmer"
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool"
-import { agents } from "@/data/mock"
+import { AgentAvatar } from "@/components/manage/agent-avatar"
 import { useStore } from "@/data/store"
 import type { ChatMessage, MessagePart, ToolPart } from "@/data/types"
 
-const toolTitles: Record<string, (p: ToolPart) => string> = {
-  route_to_agent: (p) => `Route to ${agents[p.input.agent as keyof typeof agents]?.name ?? p.input.agent}`,
+const toolTitles: Record<string, (p: ToolPart, agentName: (id: string) => string) => string> = {
+  route_to_agent: (p, agentName) => `Route to ${agentName(String(p.input.agent))}`,
+  select_workspace: (p) => `Select workspace${p.output ? ` · ${(p.output as { workspace?: string }).workspace}` : ""}`,
   search_ci_runs: () => "Search CI runs",
   search_codebase: () => "Search codebase",
   query_traces: () => "Query traces",
@@ -18,6 +19,8 @@ const toolTitles: Record<string, (p: ToolPart) => string> = {
 }
 
 function Part({ part, streaming }: { part: MessagePart; streaming: boolean }) {
+  const { agents } = useStore()
+  const agentName = (id: string) => agents.items.find((a) => a.id === id)?.name ?? id
   switch (part.type) {
     case "text":
       return <MessageResponse isAnimating={streaming}>{part.text}</MessageResponse>
@@ -34,7 +37,7 @@ function Part({ part, streaming }: { part: MessagePart; streaming: boolean }) {
           <ToolHeader
             type="dynamic-tool"
             toolName={part.name}
-            title={toolTitles[part.name]?.(part) ?? part.name}
+            title={toolTitles[part.name]?.(part, agentName) ?? part.name}
             state={part.state}
           />
           <ToolContent>
@@ -47,14 +50,14 @@ function Part({ part, streaming }: { part: MessagePart; streaming: boolean }) {
 }
 
 function AssistantMessage({ message, streaming }: { message: ChatMessage; streaming: boolean }) {
+  const { agents } = useStore()
+  const triage = agents.items.find((a) => a.id === "triage")
   const text = message.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n\n")
   return (
     <Message from="assistant">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <span className="flex size-5 items-center justify-center rounded bg-primary/15 text-[10px] font-bold text-primary">
-          T
-        </span>
-        Triage
+        {triage && <AgentAvatar agent={triage} size="sm" />}
+        {triage?.name ?? "Triage"}
       </div>
       <MessageContent className="w-full">
         {message.parts.length === 0 ? (

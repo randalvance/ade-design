@@ -1,20 +1,243 @@
-import type { Agent, AgentId, ChatMessage, MessagePart, Thread } from "./types"
+import type {
+  Agent,
+  ChatMessage,
+  Factory,
+  FactoryCard,
+  McpServer,
+  MessagePart,
+  Model,
+  Skill,
+  Thread,
+  Workspace,
+} from "./types"
 
-export const agents: Record<AgentId, Agent> = {
-  triage: { id: "triage", name: "Triage", description: "Understands the request and routes it to the right agents" },
-  planner: { id: "planner", name: "Planner", description: "Breaks work into an implementation plan" },
-  coder: { id: "coder", name: "Coder", description: "Writes and edits code in a worktree" },
-  reviewer: { id: "reviewer", name: "Reviewer", description: "Reviews diffs for correctness and style" },
-  tester: { id: "tester", name: "Tester", description: "Writes and runs tests" },
-  researcher: { id: "researcher", name: "Researcher", description: "Reads docs, issues and code to answer questions" },
-}
+/* ── Catalogs ─────────────────────────────────────────────────────────── */
 
-export const repos = ["primepaw/web", "primepaw/api", "primepaw/infra", "primepaw/design-system"]
-
-export const models = [
+export const models: Model[] = [
   { id: "claude-opus-5-5", name: "Claude Opus 5.5" },
   { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5" },
   { id: "claude-haiku-5-5", name: "Claude Haiku 5.5" },
+  { id: "claude-fable-5-1", name: "Claude Fable 5.1" },
+]
+
+export const skills: Skill[] = [
+  { id: "sk-tdd", name: "Test-driven development", description: "Red → green → refactor loop with failing tests first" },
+  { id: "sk-review", name: "Code review", description: "Reviews diffs against the repo's standards" },
+  { id: "sk-pr", name: "PR writer", description: "Writes pull request titles and descriptions" },
+  { id: "sk-debug", name: "Bug diagnosis", description: "Reproduce, bisect and isolate regressions" },
+  { id: "sk-a11y", name: "Accessibility audit", description: "WCAG 2.1 AA checks for UI changes" },
+  { id: "sk-db", name: "Database migrations", description: "Writes safe, reversible migrations" },
+  { id: "sk-docs", name: "Docs writer", description: "Keeps README and ADRs current" },
+  { id: "sk-perf", name: "Performance profiling", description: "Traces, flame graphs and query plans" },
+]
+
+export const mcpServers: McpServer[] = [
+  { id: "mcp-github", name: "GitHub", description: "Issues, pull requests, Actions", transport: "http" },
+  { id: "mcp-jira", name: "Jira", description: "Tickets, sprints and boards", transport: "http" },
+  { id: "mcp-postgres", name: "Postgres", description: "Read-only queries against dev databases", transport: "stdio" },
+  { id: "mcp-sentry", name: "Sentry", description: "Errors and performance traces", transport: "http" },
+  { id: "mcp-figma", name: "Figma", description: "Design files and components", transport: "http" },
+  { id: "mcp-browser", name: "Browser", description: "Drive a headless browser for e2e checks", transport: "stdio" },
+  { id: "mcp-aws", name: "AWS", description: "CloudWatch, CloudTrail and resource inventory", transport: "http" },
+  { id: "mcp-docs", name: "Docs search", description: "Search library and framework docs", transport: "http" },
+]
+
+/* ── Seed data ────────────────────────────────────────────────────────── */
+
+const HOUR_ = 60 * 60 * 1000
+const DAY_ = 24 * HOUR_
+const t0 = Date.now()
+let memSeq = 0
+const mem = (text: string, source: "user" | "agent" = "user", ago = 3 * DAY_) => ({
+  id: `mem-${++memSeq}`,
+  text,
+  source,
+  createdAt: t0 - ago,
+})
+
+export const initialWorkspaces: Workspace[] = [
+  {
+    id: "ws-web",
+    name: "Storefront Web",
+    icon: "cart",
+    color: "#3b82f6",
+    folders: ["~/dev/primepaw/web", "~/dev/primepaw/shared-ui"],
+    instructions:
+      "Next.js 16 app router. Use the design-system package for all UI. Every PR needs a Playwright test for user-facing changes. Never touch `src/legacy/` without asking.",
+    skillIds: ["sk-tdd", "sk-review", "sk-a11y", "sk-pr"],
+    mcpServerIds: ["mcp-github", "mcp-browser", "mcp-figma"],
+    memory: [
+      mem("Checkout e2e tests are flaky when the tax request is slow — wait on the network call, not a timeout.", "agent", 2 * DAY_),
+      mem("Prefer server components; only add 'use client' at leaf components."),
+    ],
+    tracker: { kind: "github", project: "primepaw/web", url: "https://github.com/primepaw/web/issues" },
+  },
+  {
+    id: "ws-api",
+    name: "Orders API",
+    icon: "server",
+    color: "#10b981",
+    folders: ["~/dev/primepaw/api"],
+    instructions: "Go 1.25 service. Migrations go in `db/migrations` and must use `CREATE INDEX CONCURRENTLY`. Run `make test` before proposing a merge.",
+    skillIds: ["sk-db", "sk-perf", "sk-debug", "sk-review"],
+    mcpServerIds: ["mcp-github", "mcp-postgres", "mcp-sentry"],
+    memory: [mem("p95 budget for /api/orders is 150ms.", "user", 10 * DAY_)],
+    tracker: { kind: "jira", project: "PAW", url: "https://primepaw.atlassian.net/browse/PAW" },
+  },
+  {
+    id: "ws-infra",
+    name: "Infrastructure",
+    icon: "cloud",
+    color: "#f97316",
+    folders: ["~/dev/primepaw/infra"],
+    instructions: "Terraform 1.12 + Terragrunt. Never apply to production; plans only. Staging changes need a CloudTrail check first.",
+    skillIds: ["sk-review", "sk-docs"],
+    mcpServerIds: ["mcp-aws", "mcp-github"],
+    memory: [],
+    tracker: { kind: "linear", project: "INF", url: "https://linear.app/primepaw/team/INF" },
+  },
+  {
+    id: "ws-design",
+    name: "Design System",
+    icon: "palette",
+    color: "#ec4899",
+    folders: ["~/dev/primepaw/design-system"],
+    instructions: "All colors must come from tokens. Components need Storybook stories and a11y checks.",
+    skillIds: ["sk-a11y", "sk-docs"],
+    mcpServerIds: ["mcp-figma", "mcp-github"],
+    memory: [mem("Hard-coded hex values remain in Button, Badge and Toast.", "agent", 3 * DAY_)],
+    tracker: null,
+  },
+]
+
+export const initialAgents: Agent[] = [
+  {
+    id: "triage",
+    name: "Triage",
+    description: "Reads every request, picks the workspace, agent and model, and routes the work",
+    color: "#3b82f6",
+    modelId: "claude-sonnet-5-5",
+    systemPrompt:
+      "You are the Triage agent. For each request: identify the workspace it belongs to, decide which specialist agent should handle it, choose an appropriate model, and hand off a scoped brief. Ask a clarifying question only when the request is ambiguous.",
+    skillIds: [],
+    mcpServerIds: ["mcp-github", "mcp-jira"],
+    memory: [mem("Randal prefers short status updates with a single question at the end.", "agent", 5 * DAY_)],
+    builtIn: true,
+  },
+  {
+    id: "planner",
+    name: "Planner",
+    description: "Breaks work into an implementation plan with acceptance criteria",
+    color: "#a855f7",
+    modelId: "claude-opus-5-5",
+    systemPrompt: "Turn the brief into a numbered plan. Each step names the files it touches and how it will be verified.",
+    skillIds: ["sk-docs"],
+    mcpServerIds: ["mcp-github", "mcp-jira", "mcp-docs"],
+    memory: [],
+  },
+  {
+    id: "coder",
+    name: "Coder",
+    description: "Writes and edits code in an isolated worktree",
+    color: "#10b981",
+    modelId: "claude-opus-5-5",
+    systemPrompt: "Implement the plan in a worktree. Keep diffs minimal and follow the workspace instructions.",
+    skillIds: ["sk-tdd", "sk-db", "sk-pr"],
+    mcpServerIds: ["mcp-github", "mcp-docs"],
+    memory: [],
+  },
+  {
+    id: "reviewer",
+    name: "Reviewer",
+    description: "Reviews diffs for correctness, security and style",
+    color: "#eab308",
+    modelId: "claude-opus-5-5",
+    systemPrompt: "Review the diff. Report only issues you can demonstrate, most severe first.",
+    skillIds: ["sk-review", "sk-a11y"],
+    mcpServerIds: ["mcp-github"],
+    memory: [],
+  },
+  {
+    id: "tester",
+    name: "Tester",
+    description: "Writes and runs tests, reproduces bugs",
+    color: "#06b6d4",
+    modelId: "claude-sonnet-5-5",
+    systemPrompt: "Reproduce the issue with a failing test before any fix. Run the full suite before handing back.",
+    skillIds: ["sk-tdd", "sk-debug"],
+    mcpServerIds: ["mcp-browser", "mcp-github"],
+    memory: [],
+  },
+  {
+    id: "researcher",
+    name: "Researcher",
+    description: "Reads docs, issues, traces and code to answer questions",
+    color: "#f97316",
+    modelId: "claude-sonnet-5-5",
+    systemPrompt: "Investigate and cite sources. Separate what you verified from what you suspect.",
+    skillIds: ["sk-perf", "sk-debug"],
+    mcpServerIds: ["mcp-sentry", "mcp-postgres", "mcp-aws", "mcp-docs"],
+    memory: [],
+  },
+]
+
+let cardSeq = 0
+const card = (column: FactoryCard["column"], title: string, extra: Partial<FactoryCard> = {}): FactoryCard => ({
+  id: `card-${++cardSeq}`,
+  title,
+  column,
+  labels: [],
+  updatedAt: t0 - (cardSeq % 7) * HOUR_,
+  ...extra,
+})
+
+export const initialFactories: Factory[] = [
+  {
+    id: "fac-storefront",
+    name: "Storefront",
+    icon: "factory",
+    color: "#3b82f6",
+    enabled: true,
+    workspaceId: "ws-web",
+    cards: [
+      card("todo", "Saved carts for signed-out users", { ticket: "#1450", labels: ["feature"] }),
+      card("todo", "Lazy-load product reviews", { ticket: "#1447", labels: ["perf"] }),
+      card("todo", "Empty state for wishlist", { ticket: "#1444", labels: ["ux"] }),
+      card("plan", "Gift card balance check", { ticket: "#1439", agentId: "planner", labels: ["feature"], active: true }),
+      card("implement", "Fix flaky checkout e2e test", { ticket: "#1436", agentId: "tester", labels: ["bug", "ci"], active: true }),
+      card("implement", "Address autocomplete on checkout", { ticket: "#1431", agentId: "coder", labels: ["feature"], active: true }),
+      card("review", "Settings page dark mode", { ticket: "#1428", agentId: "reviewer", labels: ["ux"], active: true }),
+      card("test", "Currency switcher rounding", { ticket: "#1422", agentId: "tester", labels: ["bug"] }),
+      card("merge", "Upgrade to React 19.3", { ticket: "#1419", labels: ["chore"] }),
+    ],
+  },
+  {
+    id: "fac-api",
+    name: "Orders API",
+    icon: "server",
+    color: "#10b981",
+    enabled: true,
+    workspaceId: "ws-api",
+    cards: [
+      card("todo", "Idempotency keys for POST /orders", { ticket: "PAW-91", labels: ["feature"] }),
+      card("plan", "Restore orders (customer_id, created_at) index", { ticket: "PAW-88", agentId: "planner", labels: ["perf"], active: true }),
+      card("implement", "Paginate /orders with cursors", { ticket: "PAW-84", agentId: "coder", labels: ["feature"], active: true }),
+      card("review", "Session token refactor", { ticket: "PAW-80", agentId: "reviewer", labels: ["security"] }),
+    ],
+  },
+  {
+    id: "fac-design",
+    name: "Design System",
+    icon: "palette",
+    color: "#ec4899",
+    enabled: false,
+    workspaceId: "ws-design",
+    cards: [
+      card("todo", "Replace hard-coded colors in Button", { labels: ["tokens"] }),
+      card("todo", "Replace hard-coded colors in Badge", { labels: ["tokens"] }),
+      card("todo", "Toast a11y: announce politely", { labels: ["a11y"] }),
+    ],
+  },
 ]
 
 export const suggestions = [
@@ -24,9 +247,9 @@ export const suggestions = [
   "Review my open PR for auth changes",
 ]
 
-const HOUR = 60 * 60 * 1000
-const DAY = 24 * HOUR
-const now = Date.now()
+const HOUR = HOUR_
+const DAY = DAY_
+const now = t0
 
 let seq = 0
 const msg = (role: ChatMessage["role"], parts: MessagePart[], ago: number): ChatMessage => ({
@@ -41,7 +264,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-flaky-checkout",
     title: "Flaky checkout e2e test",
-    repo: "primepaw/web",
+    workspaceId: "ws-web",
     status: "running",
     routedTo: ["researcher", "tester"],
     updatedAt: now - 4 * 60 * 1000,
@@ -92,7 +315,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-orders-latency",
     title: "/api/orders latency regression",
-    repo: "primepaw/api",
+    workspaceId: "ws-api",
     status: "needs-input",
     routedTo: ["researcher"],
     updatedAt: now - 55 * 60 * 1000,
@@ -120,7 +343,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-settings-dark-mode",
     title: "Dark mode for settings page",
-    repo: "primepaw/web",
+    workspaceId: "ws-web",
     status: "done",
     routedTo: ["planner", "coder", "reviewer"],
     updatedAt: now - 5 * HOUR,
@@ -152,7 +375,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-auth-pr-review",
     title: "Review auth session refactor",
-    repo: "primepaw/api",
+    workspaceId: "ws-api",
     status: "error",
     routedTo: ["reviewer"],
     updatedAt: now - 1 * DAY - 2 * HOUR,
@@ -165,7 +388,7 @@ export const initialThreads: Thread[] = [
             type: "tool",
             name: "fetch_pull_request",
             state: "output-error",
-            input: { repo: "primepaw/api", number: 1420 },
+            input: { workspaceId: "ws-api", number: 1420 },
             errorText: "GitHub API: 404 Not Found — PR may be in a fork the agent cannot access.",
           },
           text("I couldn't open **#1420** — it looks like it lives in a fork I don't have access to. Can you push the branch to `primepaw/api` or grant the agent access to the fork?"),
@@ -177,7 +400,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-terraform-drift",
     title: "Terraform drift in staging",
-    repo: "primepaw/infra",
+    workspaceId: "ws-infra",
     status: "done",
     routedTo: ["researcher"],
     updatedAt: now - 1 * DAY - 6 * HOUR,
@@ -189,7 +412,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-button-tokens",
     title: "Button tokens audit",
-    repo: "primepaw/design-system",
+    workspaceId: "ws-design",
     status: "idle",
     routedTo: [],
     updatedAt: now - 3 * DAY,
@@ -201,7 +424,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-onboarding-copy",
     title: "Onboarding empty states",
-    repo: "primepaw/web",
+    workspaceId: "ws-web",
     status: "done",
     routedTo: ["coder"],
     updatedAt: now - 5 * DAY,
@@ -210,7 +433,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-ci-cache",
     title: "Speed up CI with pnpm cache",
-    repo: "primepaw/infra",
+    workspaceId: "ws-infra",
     status: "done",
     routedTo: ["coder", "reviewer"],
     updatedAt: now - 12 * DAY,
@@ -219,7 +442,7 @@ export const initialThreads: Thread[] = [
   {
     id: "t-rate-limit",
     title: "Rate limiting for public API",
-    repo: "primepaw/api",
+    workspaceId: "ws-api",
     status: "idle",
     routedTo: ["planner"],
     updatedAt: now - 20 * DAY,
@@ -228,9 +451,13 @@ export const initialThreads: Thread[] = [
 ]
 
 /** Canned Triage responses for new prompts — picked by keyword, streamed in by the mock runtime. */
-export function mockTriageReply(prompt: string): MessagePart[] {
+export function mockTriageReply(prompt: string, workspaces: Workspace[], agents: Agent[]): {
+  parts: MessagePart[]
+  workspaceId: string
+  agentId: string
+} {
   const p = prompt.toLowerCase()
-  const agent: AgentId = /test|flaky|e2e/.test(p)
+  const agentId = /test|flaky|e2e/.test(p)
     ? "tester"
     : /review|pr\b|pull request/.test(p)
       ? "reviewer"
@@ -239,29 +466,40 @@ export function mockTriageReply(prompt: string): MessagePart[] {
         : /plan|design|propose/.test(p)
           ? "planner"
           : "coder"
-  const a = agents[agent]
-  return [
-    {
-      type: "reasoning",
-      duration: 3,
-      text: `The request reads as a **${a.name.toLowerCase()}** task. I'll check the repository context, then hand it to the ${a.name} agent with a scoped brief.`,
-    },
-    {
-      type: "tool",
-      name: "search_codebase",
-      state: "output-available",
-      input: { query: prompt.slice(0, 60), limit: 5 },
-      output: { matches: 3, files: ["src/app/routes.ts", "src/lib/api.ts", "src/features/orders/index.ts"] },
-    },
-    {
-      type: "tool",
-      name: "route_to_agent",
-      state: "input-available",
-      input: { agent, task: prompt.slice(0, 80) },
-    },
-    {
-      type: "text",
-      text: `Got it. I found **3 relevant files** and routed this to the **${a.name}** agent — ${a.description.toLowerCase()}.\n\nI'll post updates in this thread as it progresses. Anything else to add before it starts?`,
-    },
-  ]
+  const ws =
+    (/api|orders|endpoint|database|query/.test(p) && workspaces.find((w) => w.id === "ws-api")) ||
+    (/terraform|infra|deploy|aws/.test(p) && workspaces.find((w) => w.id === "ws-infra")) ||
+    (/token|component|storybook/.test(p) && workspaces.find((w) => w.id === "ws-design")) ||
+    workspaces[0]
+  const agent = agents.find((a) => a.id === agentId) ?? agents[0]
+  const model = models.find((m) => m.id === agent.modelId) ?? models[0]
+  return {
+    workspaceId: ws.id,
+    agentId: agent.id,
+    parts: [
+      {
+        type: "reasoning",
+        duration: 3,
+        text: `This reads as a **${agent.name.toLowerCase()}** task in **${ws.name}**. I'll confirm the workspace from its folders, then hand it to ${agent.name} on ${model.name}.`,
+      },
+      {
+        type: "tool",
+        name: "select_workspace",
+        state: "output-available",
+        input: { query: prompt.slice(0, 60) },
+        output: { workspace: ws.name, folders: ws.folders, confidence: 0.91 },
+      },
+      {
+        type: "tool",
+        name: "route_to_agent",
+        state: "input-available",
+        input: { agent: agent.id, model: model.id, workspace: ws.id, task: prompt.slice(0, 80) },
+      },
+      {
+        type: "text",
+        text: `Got it. This belongs in **${ws.name}**, so I've routed it to the **${agent.name}** agent on *${model.name}*. ${agent.description}.\n\nI'll post updates in this thread as it progresses. Anything else to add before it starts?`,
+      },
+    ],
+  }
 }
+
