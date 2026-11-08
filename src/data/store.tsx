@@ -4,8 +4,16 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 import { uid } from "@/lib/id"
 import { navigate, useRoute } from "@/lib/router"
 
-import { initialAgents, initialFactories, initialThreads, initialWorkspaces, mockTriageReply } from "./mock"
-import type { Agent, ChatMessage, Factory, FactoryCard, MessagePart, Thread, Workspace } from "./types"
+import {
+  initialAgents,
+  initialFactories,
+  initialMcpServers,
+  initialSkills,
+  initialThreads,
+  initialWorkspaces,
+  mockTriageReply,
+} from "./mock"
+import type { Agent, ChatMessage, Factory, FactoryCard, McpServer, MessagePart, Skill, Thread, Workspace } from "./types"
 
 /** Generic in-memory CRUD for a list of `{ id }` records. */
 function useCollection<T extends { id: string }>(initial: T[]) {
@@ -35,6 +43,12 @@ interface StoreValue {
   workspaces: Collection<Workspace>
   agents: Collection<Agent>
   factories: Collection<Factory>
+  skills: Collection<Skill>
+  mcpServers: Collection<McpServer>
+  /** Deletes a skill and unlinks it from every workspace and agent. */
+  deleteSkill: (id: string) => void
+  /** Deletes an MCP server and unlinks it from every workspace and agent. */
+  deleteMcpServer: (id: string) => void
   moveCard: (factoryId: string, cardId: string, column: FactoryCard["column"], beforeCardId?: string) => void
 }
 
@@ -56,6 +70,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const workspaces = useCollection(initialWorkspaces)
   const agents = useCollection(initialAgents)
   const factories = useCollection(initialFactories)
+  const skills = useCollection(initialSkills)
+  const mcpServers = useCollection(initialMcpServers)
+
+  const { setItems: setWorkspaces } = workspaces
+  const { setItems: setAgents } = agents
+  const { remove: removeSkill } = skills
+  const { remove: removeMcp } = mcpServers
+  const deleteSkill = useCallback(
+    (id: string) => {
+      removeSkill(id)
+      const unlink = <T extends { skillIds: string[] }>(xs: T[]) => xs.map((x) => ({ ...x, skillIds: x.skillIds.filter((s) => s !== id) }))
+      setWorkspaces(unlink)
+      setAgents(unlink)
+    },
+    [removeSkill, setAgents, setWorkspaces],
+  )
+  const deleteMcpServer = useCallback(
+    (id: string) => {
+      removeMcp(id)
+      const unlink = <T extends { mcpServerIds: string[] }>(xs: T[]) =>
+        xs.map((x) => ({ ...x, mcpServerIds: x.mcpServerIds.filter((s) => s !== id) }))
+      setWorkspaces(unlink)
+      setAgents(unlink)
+    },
+    [removeMcp, setAgents, setWorkspaces],
+  )
 
   const updateThread = useCallback((id: string, fn: (t: Thread) => Thread) => {
     setThreads((ts) => ts.map((t) => (t.id === id ? fn(t) : t)))
@@ -215,9 +255,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       workspaces,
       agents,
       factories,
+      skills,
+      mcpServers,
+      deleteSkill,
+      deleteMcpServer,
       moveCard,
     }
-  }, [threads, activeId, statusById, sendMessage, stop, togglePin, deleteThread, workspaces, agents, factories, moveCard])
+  }, [
+    threads,
+    activeId,
+    statusById,
+    sendMessage,
+    stop,
+    togglePin,
+    deleteThread,
+    workspaces,
+    agents,
+    factories,
+    skills,
+    mcpServers,
+    deleteSkill,
+    deleteMcpServer,
+    moveCard,
+  ])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

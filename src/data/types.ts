@@ -7,6 +7,26 @@ import type { IconName } from "@/lib/icons"
 export interface Skill {
   id: string
   name: string
+  /** One line. Agents read this to decide when to load the skill. */
+  description: string
+  /** The skill body (SKILL.md), in Markdown. */
+  instructions: string
+  /** Built-in skills ship with the app and can't be deleted. */
+  source: "built-in" | "custom"
+}
+
+export type McpTransport = "stdio" | "http"
+export type McpStatus = "connected" | "disconnected" | "error"
+
+export interface KeyValue {
+  key: string
+  value: string
+  /** Masked in the UI. */
+  secret?: boolean
+}
+
+export interface McpTool {
+  name: string
   description: string
 }
 
@@ -14,8 +34,20 @@ export interface McpServer {
   id: string
   name: string
   description: string
-  /** e.g. `stdio`, `http` */
-  transport: "stdio" | "http"
+  transport: McpTransport
+  /** stdio: the command and its arguments. */
+  command?: string
+  args?: string[]
+  /** http: the server URL. */
+  url?: string
+  /** stdio: environment variables. http: request headers. */
+  env: KeyValue[]
+  /** Globally disabled servers can't be used by any workspace or agent. */
+  enabled: boolean
+  status: McpStatus
+  lastError?: string
+  /** Tools the server advertised on its last connection. */
+  tools: McpTool[]
 }
 
 export interface MemoryItem {

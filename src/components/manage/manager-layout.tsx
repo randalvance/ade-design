@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
  */
 export function ManagerLayout<T extends { id: string; name: string }>({
   title,
+  noun = title.toLowerCase(),
   icon: Icon,
   items,
   selectedId,
@@ -22,6 +23,8 @@ export function ManagerLayout<T extends { id: string; name: string }>({
   children,
 }: {
   title: string
+  /** Used in "Search …"; defaults to the lowercased title. */
+  noun?: string
   icon: React.ComponentType<{ className?: string }>
   items: T[]
   selectedId?: string
@@ -55,8 +58,8 @@ export function ManagerLayout<T extends { id: string; name: string }>({
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={`Search ${title.toLowerCase()}`}
-                aria-label={`Search ${title.toLowerCase()}`}
+                placeholder={`Search ${noun}`}
+                aria-label={`Search ${noun}`}
                 className="h-8 pl-8"
               />
             </div>

@@ -7,6 +7,8 @@ import { useSyncExternalStore } from "react"
  *   #/workspaces[/:id]    workspace manager
  *   #/agents[/:id]        agent manager
  *   #/factories[/:id]     factory board
+ *   #/skills[/:id]        skill manager
+ *   #/mcp[/:id]           MCP server manager
  */
 export type Route =
   | { name: "home" }
@@ -14,6 +16,8 @@ export type Route =
   | { name: "workspaces"; id?: string }
   | { name: "agents"; id?: string }
   | { name: "factories"; id?: string }
+  | { name: "skills"; id?: string }
+  | { name: "mcp"; id?: string }
 
 export function parseRoute(hash: string): Route {
   const [, section, id] = hash.replace(/^#/, "").split("/")
@@ -23,6 +27,8 @@ export function parseRoute(hash: string): Route {
     case "workspaces":
     case "agents":
     case "factories":
+    case "skills":
+    case "mcp":
       return { name: section, id: id || undefined }
     default:
       return { name: "home" }

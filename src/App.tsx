@@ -16,6 +16,8 @@ import { StoreProvider, useStore } from "@/data/store"
 import { href, navigate, useRoute } from "@/lib/router"
 import { AgentsPage } from "@/pages/agents-page"
 import { FactoriesPage } from "@/pages/factories-page"
+import { McpPage } from "@/pages/mcp-page"
+import { SkillsPage } from "@/pages/skills-page"
 import { WorkspacesPage } from "@/pages/workspaces-page"
 
 function ThreadView() {
@@ -107,6 +109,8 @@ function Workspace() {
       {route.name === "workspaces" && <WorkspacesPage id={route.id} />}
       {route.name === "agents" && <AgentsPage id={route.id} />}
       {route.name === "factories" && <FactoriesPage id={route.id} />}
+      {route.name === "skills" && <SkillsPage id={route.id} />}
+      {route.name === "mcp" && <McpPage id={route.id} />}
     </SidebarInset>
   )
 }

@@ -1,9 +1,11 @@
 import {
+  BlocksIcon,
   BotIcon,
   LayersIcon,
   MoreHorizontalIcon,
   PinIcon,
   PinOffIcon,
+  PlugIcon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -50,7 +52,8 @@ import { cn } from "@/lib/utils"
 
 
 export function AppSidebar() {
-  const { threads, factories } = useStore()
+  const { threads, factories, mcpServers } = useStore()
+  const mcpErrors = mcpServers.items.filter((m) => m.enabled && m.status === "error").length
   const route = useRoute()
   const createFactory = useCreateFactory()
   const [query, setQuery] = useState("")
@@ -108,6 +111,27 @@ export function AppSidebar() {
                 <span>Agents</span>
               </a>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={route.name === "skills"} tooltip="Skills">
+              <a href={href({ name: "skills" })}>
+                <BlocksIcon />
+                <span>Skills</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={route.name === "mcp"} tooltip="MCP servers">
+              <a href={href({ name: "mcp" })}>
+                <PlugIcon />
+                <span>MCP servers</span>
+              </a>
+            </SidebarMenuButton>
+            {mcpErrors > 0 && (
+              <SidebarMenuBadge>
+                <span className="size-1.5 rounded-full bg-destructive" aria-label={`${mcpErrors} server error`} />
+              </SidebarMenuBadge>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

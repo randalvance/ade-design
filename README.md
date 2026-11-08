@@ -23,11 +23,11 @@ The container publishes its port 5173 on the host at `127.0.0.1:5180`. `node_mod
 | Path | What |
 | --- | --- |
 | `src/App.tsx` | Shell and route switch (home, thread, workspaces, agents, factories) |
-| `src/lib/router.ts` | Hash router: `#/`, `#/t/:id`, `#/workspaces/:id`, `#/agents/:id`, `#/factories/:id` |
+| `src/lib/router.ts` | Hash router: `#/`, `#/t/:id`, `#/workspaces/:id`, `#/agents/:id`, `#/skills/:id`, `#/mcp/:id`, `#/factories/:id` |
 | `src/components/app-sidebar.tsx` | Navigation, factory list (on/off, active count), threads |
 | `src/components/chat/` | Triage home, composer (prompt + mic + send only), message list |
 | `src/components/manage/` | Shared editors: icon picker, agent avatar, skills/MCP checklists, memory, list+editor layout |
-| `src/pages/` | Workspaces, Agents and Factories (Kanban) pages |
+| `src/pages/` | Workspaces, Agents, Skills, MCP servers and Factories (Kanban) pages |
 | `src/data/mock.ts` | Seed workspaces, agents, factories, threads; skill/MCP/model catalogs; canned Triage replies |
 | `src/data/store.tsx` | In-memory store (CRUD per collection) and simulated streaming |
 | `src/themes/` | Theme tokens and registry |
@@ -37,6 +37,8 @@ The container publishes its port 5173 on the host at `127.0.0.1:5180`. `node_mod
 - **Triage**: the home composer is just a prompt. Triage picks the workspace, agent and model.
 - **Workspaces**: icon, folders, instructions, linked tracker (GitHub Issues, Jira, Linear), skills, MCP servers and memory.
 - **Agents**: photo, name, description, default model, system prompt, skills, MCP servers and memory. These use the same editor components as workspaces.
+- **Skills**: name, description and SKILL.md instructions (edit and preview). Built-in skills are read-only; duplicate one to customize it.
+- **MCP servers**: stdio command and args or an HTTP URL, env vars or headers (with secrets masked), on/off switch, connection status, discovered tools and the equivalent `mcp.json`. Deleting a skill or server unlinks it from every workspace and agent.
 - **Factories**: a Kanban board (Todo → Plan → Implement → Review → Test → Merge) tied to a workspace, with an icon, a name and an on/off switch.
 
 ## Themes
