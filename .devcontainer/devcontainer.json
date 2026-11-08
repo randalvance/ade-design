@@ -1,0 +1,37 @@
+{
+  "name": "primepaw-design",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
+
+  // Mount the repo at the same path as on the host, so paths in logs and errors match.
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  "workspaceFolder": "${localWorkspaceFolder}",
+
+  "mounts": [
+    // Linux node_modules live in a volume so they never mix with a host (macOS) install.
+    "source=primepaw-design-node_modules-${devcontainerId},target=${localWorkspaceFolder}/node_modules,type=volume"
+  ],
+
+  // Dev server: container port 5173 is published on the host at http://localhost:5180.
+  // Bound to 127.0.0.1 only, so it isn't reachable from the network.
+  "runArgs": ["-p", "127.0.0.1:5180:5173"],
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": { "label": "Vite dev server", "onAutoForward": "notify" }
+  },
+
+  "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    // Keep pnpm's store in the node_modules volume (same filesystem → hard links, nothing in the repo).
+    "npm_config_store_dir": "${containerWorkspaceFolder}/node_modules/.pnpm-store"
+  },
+
+  "postCreateCommand": "sudo chown -R node:node node_modules && sudo corepack enable pnpm && CI=true pnpm install --frozen-lockfile",
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["bradlc.vscode-tailwindcss", "oxc.oxc-vscode"]
+    }
+  },
+
+  "remoteUser": "node"
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="vscode-dark" data-appearance="dark" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Primepaw</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      // Keep the light-theme list in sync with src/themes/registry.ts.
+      ;(function () {
+        try {
+          var id = localStorage.getItem("primepaw.theme")
+          if (!id) return
+          var light = ["vscode-light"]
+          var appearance = light.indexOf(id) >= 0 ? "light" : "dark"
+          var root = document.documentElement
+          root.dataset.theme = id
+          root.dataset.appearance = appearance
+          root.classList.toggle("dark", appearance === "dark")
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

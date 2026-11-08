@@ -1,0 +1,55 @@
+/* Nord — arcticicestudio palette (nord0–nord15) */
+[data-theme="nord"] {
+  color-scheme: dark;
+  --radius: 0.5rem;
+
+  --background: #2e3440;   /* nord0 */
+  --foreground: #d8dee9;   /* nord4 */
+  --card: #3b4252;         /* nord1 */
+  --card-foreground: #e5e9f0;
+  --popover: #3b4252;
+  --popover-foreground: #e5e9f0;
+  --primary: #88c0d0;      /* nord8 */
+  --primary-foreground: #2e3440;
+  --secondary: #434c5e;    /* nord2 */
+  --secondary-foreground: #eceff4;
+  --muted: #3b4252;
+  --muted-foreground: #8b95a7;
+  --accent: #434c5e;
+  --accent-foreground: #eceff4;
+  --destructive: #bf616a;  /* nord11 */
+  --border: #3b4252;
+  --input: #4c566a;        /* nord3 */
+  --ring: #88c0d0;
+
+  --success: #a3be8c;      /* nord14 */
+  --warning: #ebcb8b;      /* nord13 */
+  --info: #81a1c1;         /* nord9 */
+
+  --chart-1: #88c0d0;
+  --chart-2: #a3be8c;
+  --chart-3: #ebcb8b;
+  --chart-4: #b48ead;
+  --chart-5: #d08770;
+
+  --sidebar: #2b303b;
+  --sidebar-foreground: #d8dee9;
+  --sidebar-primary: #88c0d0;
+  --sidebar-primary-foreground: #2e3440;
+  --sidebar-accent: #3b4252;
+  --sidebar-accent-foreground: #eceff4;
+  --sidebar-border: #3b4252;
+  --sidebar-ring: #88c0d0;
+
+  --syntax-foreground: #d8dee9;
+  --syntax-background: #272c36;
+  --syntax-token-constant: #b48ead;
+  --syntax-token-string: #a3be8c;
+  --syntax-token-comment: #616e88;
+  --syntax-token-keyword: #81a1c1;
+  --syntax-token-parameter: #d8dee9;
+  --syntax-token-function: #88c0d0;
+  --syntax-token-string-expression: #a3be8c;
+  --syntax-token-punctuation: #eceff4;
+  --syntax-token-link: #8fbcbb;
+}

@@ -1,0 +1,55 @@
+/* JetBrains — Darcula */
+[data-theme="darcula"] {
+  color-scheme: dark;
+  --radius: 0.25rem;
+
+  --background: #2b2b2b;
+  --foreground: #a9b7c6;
+  --card: #313335;
+  --card-foreground: #bbbbbb;
+  --popover: #3c3f41;
+  --popover-foreground: #bbbbbb;
+  --primary: #4a88c7;
+  --primary-foreground: #ffffff;
+  --secondary: #45494a;
+  --secondary-foreground: #bbbbbb;
+  --muted: #323232;
+  --muted-foreground: #808080;
+  --accent: #4b6eaf;
+  --accent-foreground: #ffffff;
+  --destructive: #c75450;
+  --border: #323232;
+  --input: #5e6060;
+  --ring: #3d6185;
+
+  --success: #6a8759;
+  --warning: #bbb529;
+  --info: #6897bb;
+
+  --chart-1: #6897bb;
+  --chart-2: #6a8759;
+  --chart-3: #ffc66d;
+  --chart-4: #9876aa;
+  --chart-5: #cc7832;
+
+  --sidebar: #3c3f41;
+  --sidebar-foreground: #bbbbbb;
+  --sidebar-primary: #4a88c7;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #4c5052;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #323232;
+  --sidebar-ring: #3d6185;
+
+  --syntax-foreground: #a9b7c6;
+  --syntax-background: #232525;
+  --syntax-token-constant: #9876aa;
+  --syntax-token-string: #6a8759;
+  --syntax-token-comment: #808080;
+  --syntax-token-keyword: #cc7832;
+  --syntax-token-parameter: #a9b7c6;
+  --syntax-token-function: #ffc66d;
+  --syntax-token-string-expression: #6a8759;
+  --syntax-token-punctuation: #cc7832;
+  --syntax-token-link: #287bde;
+}

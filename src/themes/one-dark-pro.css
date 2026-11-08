@@ -1,0 +1,55 @@
+/* One Dark Pro */
+[data-theme="one-dark-pro"] {
+  color-scheme: dark;
+  --radius: 0.375rem;
+
+  --background: #282c34;
+  --foreground: #abb2bf;
+  --card: #2c313a;
+  --card-foreground: #abb2bf;
+  --popover: #21252b;
+  --popover-foreground: #abb2bf;
+  --primary: #61afef;
+  --primary-foreground: #1e2127;
+  --secondary: #3e4452;
+  --secondary-foreground: #d7dae0;
+  --muted: #2c313a;
+  --muted-foreground: #7f848e;
+  --accent: #2c313a;
+  --accent-foreground: #d7dae0;
+  --destructive: #e06c75;
+  --border: #181a1f;
+  --input: #3e4452;
+  --ring: #528bff;
+
+  --success: #98c379;
+  --warning: #e5c07b;
+  --info: #61afef;
+
+  --chart-1: #61afef;
+  --chart-2: #98c379;
+  --chart-3: #e5c07b;
+  --chart-4: #c678dd;
+  --chart-5: #56b6c2;
+
+  --sidebar: #21252b;
+  --sidebar-foreground: #abb2bf;
+  --sidebar-primary: #61afef;
+  --sidebar-primary-foreground: #1e2127;
+  --sidebar-accent: #2c313a;
+  --sidebar-accent-foreground: #d7dae0;
+  --sidebar-border: #181a1f;
+  --sidebar-ring: #528bff;
+
+  --syntax-foreground: #abb2bf;
+  --syntax-background: #21252b;
+  --syntax-token-constant: #d19a66;
+  --syntax-token-string: #98c379;
+  --syntax-token-comment: #7f848e;
+  --syntax-token-keyword: #c678dd;
+  --syntax-token-parameter: #e06c75;
+  --syntax-token-function: #61afef;
+  --syntax-token-string-expression: #98c379;
+  --syntax-token-punctuation: #abb2bf;
+  --syntax-token-link: #56b6c2;
+}

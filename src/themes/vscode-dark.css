@@ -1,0 +1,55 @@
+/* Visual Studio Code — Default Dark Modern */
+[data-theme="vscode-dark"] {
+  color-scheme: dark;
+  --radius: 0.375rem;
+
+  --background: #1f1f1f;
+  --foreground: #cccccc;
+  --card: #202020;
+  --card-foreground: #cccccc;
+  --popover: #222222;
+  --popover-foreground: #cccccc;
+  --primary: #0078d4;
+  --primary-foreground: #ffffff;
+  --secondary: #313131;
+  --secondary-foreground: #cccccc;
+  --muted: #2a2a2a;
+  --muted-foreground: #9d9d9d;
+  --accent: #2a2d2e;
+  --accent-foreground: #ffffff;
+  --destructive: #f85149;
+  --border: #2b2b2b;
+  --input: #3c3c3c;
+  --ring: #0078d4;
+
+  --success: #2ea043;
+  --warning: #cca700;
+  --info: #3794ff;
+
+  --chart-1: #3794ff;
+  --chart-2: #4ec9b0;
+  --chart-3: #dcdcaa;
+  --chart-4: #c586c0;
+  --chart-5: #ce9178;
+
+  --sidebar: #181818;
+  --sidebar-foreground: #cccccc;
+  --sidebar-primary: #0078d4;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2d2e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2b2b2b;
+  --sidebar-ring: #0078d4;
+
+  --syntax-foreground: #d4d4d4;
+  --syntax-background: #1a1a1a;
+  --syntax-token-constant: #4fc1ff;
+  --syntax-token-string: #ce9178;
+  --syntax-token-comment: #6a9955;
+  --syntax-token-keyword: #569cd6;
+  --syntax-token-parameter: #9cdcfe;
+  --syntax-token-function: #dcdcaa;
+  --syntax-token-string-expression: #ce9178;
+  --syntax-token-punctuation: #d4d4d4;
+  --syntax-token-link: #3794ff;
+}
