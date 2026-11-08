@@ -12,8 +12,6 @@ import { useMemo, useState } from "react"
 
 import { ThreadStatusDot } from "@/components/thread-status"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,18 +111,16 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex items-center gap-2 px-1">
-          <Avatar className="size-7">
-            <AvatarFallback className="bg-sidebar-accent text-xs">RC</AvatarFallback>
-          </Avatar>
-          <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-sm font-medium">Randal Cunanan</span>
-            <span className="truncate text-xs text-muted-foreground">Pro workspace</span>
-          </div>
+        <div className="flex items-center gap-1">
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Settings">
+                <SettingsIcon />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
           <ThemeSwitcher />
-          <Button variant="ghost" size="icon-sm" aria-label="Settings">
-            <SettingsIcon />
-          </Button>
         </div>
       </SidebarFooter>
       <SidebarRail />
