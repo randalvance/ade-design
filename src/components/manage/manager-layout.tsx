@@ -1,7 +1,7 @@
 import { PlusIcon, SearchIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { PageHeader } from "@/components/page-header"
+import { SettingsHeader } from "@/components/settings-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -42,14 +42,11 @@ export function ManagerLayout<T extends { id: string; name: string }>({
 
   return (
     <div className="flex h-svh flex-col overflow-hidden">
-      <PageHeader>
-        <Icon className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-medium">{title}</h2>
-        <span className="text-xs text-muted-foreground tabular-nums">{items.length}</span>
-        <Button size="sm" className="ml-auto" onClick={onCreate}>
+      <SettingsHeader title={title} icon={Icon} count={items.length}>
+        <Button size="sm" onClick={onCreate}>
           <PlusIcon /> {createLabel}
         </Button>
-      </PageHeader>
+      </SettingsHeader>
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 flex-col border-r md:flex">
           <div className="p-2">

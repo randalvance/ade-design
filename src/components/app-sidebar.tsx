@@ -1,4 +1,5 @@
 import {
+  ArrowLeftIcon,
   BlocksIcon,
   BotIcon,
   LayersIcon,
@@ -9,9 +10,11 @@ import {
   PlusIcon,
   SearchIcon,
   SettingsIcon,
+  SlidersHorizontalIcon,
   SquarePenIcon,
   Trash2Icon,
   WorkflowIcon,
+  type LucideIcon,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
@@ -46,14 +49,132 @@ import {
 import { useStore } from "@/data/store"
 import { useCreateFactory } from "@/data/use-create-factory"
 import type { Thread } from "@/data/types"
-import { href, navigate, useRoute } from "@/lib/router"
+import { getLastAppHash, href, isSettingsRoute, navigate, type Route, useRoute } from "@/lib/router"
 import { bucketOrder, dateBucket, relativeTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-
 export function AppSidebar() {
-  const { threads, factories, mcpServers } = useStore()
+  const route = useRoute()
+  const inSettings = isSettingsRoute(route)
+
+  return (
+    <Sidebar collapsible="offcanvas">
+      <SidebarHeader className="gap-3">
+        <div className="flex items-center gap-2 px-1 pt-1">
+          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <WorkflowIcon className="size-4" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="truncate text-sm font-semibold">Primepaw</span>
+            <span className="truncate text-xs text-muted-foreground">Agentic workspace</span>
+          </div>
+        </div>
+        <SidebarMenu>
+          {inSettings ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Back to app">
+                <a href={getLastAppHash()}>
+                  <ArrowLeftIcon />
+                  <span>Back to app</span>
+                  <Kbd className="ml-auto">Esc</Kbd>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={route.name === "home"} tooltip="New thread">
+                <a href={href({ name: "home" })}>
+                  <SquarePenIcon />
+                  <span>New thread</span>
+                  <Kbd className="ml-auto">⌘N</Kbd>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>{inSettings ? <SettingsNav /> : <MainNav />}</SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <div className="flex items-center gap-1">
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={inSettings} tooltip="Settings">
+                <a href={href({ name: "settings" })}>
+                  <SettingsIcon />
+                  <span>Settings</span>
+                  <Kbd className="ml-auto">⌘,</Kbd>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <ThemeSwitcher />
+        </div>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}
+
+/** Settings menu that replaces the main sidebar content on settings routes. */
+function SettingsNav() {
+  const route = useRoute()
+  const { workspaces, agents, skills, mcpServers } = useStore()
   const mcpErrors = mcpServers.items.filter((m) => m.enabled && m.status === "error").length
+
+  const items: { route: Route; label: string; icon: LucideIcon; count?: number; alert?: boolean }[] = [
+    { route: { name: "workspaces" }, label: "Workspaces", icon: LayersIcon, count: workspaces.items.length },
+    { route: { name: "agents" }, label: "Agents", icon: BotIcon, count: agents.items.length },
+    { route: { name: "skills" }, label: "Skills", icon: BlocksIcon, count: skills.items.length },
+    { route: { name: "mcp" }, label: "MCP servers", icon: PlugIcon, count: mcpServers.items.length, alert: mcpErrors > 0 },
+  ]
+
+  return (
+    <>
+      <SidebarGroup className="py-1">
+        <SidebarGroupLabel>Preferences</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={route.name === "settings"} tooltip="General">
+                <a href={href({ name: "settings" })}>
+                  <SlidersHorizontalIcon />
+                  <span>General</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      <SidebarGroup className="py-1">
+        <SidebarGroupLabel>Configuration</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton asChild isActive={route.name === item.route.name} tooltip={item.label}>
+                  <a href={href(item.route)}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </a>
+                </SidebarMenuButton>
+                <SidebarMenuBadge className="gap-1.5">
+                  {item.alert && <span className="size-1.5 rounded-full bg-destructive" aria-label="Has errors" />}
+                  <span className="tabular-nums">{item.count}</span>
+                </SidebarMenuBadge>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </>
+  )
+}
+
+/** Factories and Triage threads. */
+function MainNav() {
+  const { threads, factories } = useStore()
   const route = useRoute()
   const createFactory = useCreateFactory()
   const [query, setQuery] = useState("")
@@ -75,68 +196,7 @@ export function AppSidebar() {
   }, [threads, query])
 
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="gap-3">
-        <div className="flex items-center gap-2 px-1 pt-1">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <WorkflowIcon className="size-4" />
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-sm font-semibold">Primepaw</span>
-            <span className="truncate text-xs text-muted-foreground">Agentic workspace</span>
-          </div>
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={route.name === "home"} tooltip="New thread">
-              <a href={href({ name: "home" })}>
-                <SquarePenIcon />
-                <span>New thread</span>
-                <Kbd className="ml-auto">⌘N</Kbd>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={route.name === "workspaces"} tooltip="Workspaces">
-              <a href={href({ name: "workspaces" })}>
-                <LayersIcon />
-                <span>Workspaces</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={route.name === "agents"} tooltip="Agents">
-              <a href={href({ name: "agents" })}>
-                <BotIcon />
-                <span>Agents</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={route.name === "skills"} tooltip="Skills">
-              <a href={href({ name: "skills" })}>
-                <BlocksIcon />
-                <span>Skills</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={route.name === "mcp"} tooltip="MCP servers">
-              <a href={href({ name: "mcp" })}>
-                <PlugIcon />
-                <span>MCP servers</span>
-              </a>
-            </SidebarMenuButton>
-            {mcpErrors > 0 && (
-              <SidebarMenuBadge>
-                <span className="size-1.5 rounded-full bg-destructive" aria-label={`${mcpErrors} server error`} />
-              </SidebarMenuBadge>
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent>
+    <>
         <SidebarGroup className="py-1">
           <SidebarGroupLabel>Factories</SidebarGroupLabel>
           <SidebarGroupAction title="New factory" onClick={createFactory}>
@@ -200,23 +260,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex items-center gap-1">
-          <SidebarMenu className="flex-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Settings">
-                <SettingsIcon />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <ThemeSwitcher />
-        </div>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+    </>
   )
 }
 

@@ -13,9 +13,10 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { StoreProvider, useStore } from "@/data/store"
-import { href, navigate, useRoute } from "@/lib/router"
+import { getLastAppHash, href, isSettingsRoute, navigate, useRoute } from "@/lib/router"
 import { AgentsPage } from "@/pages/agents-page"
 import { FactoriesPage } from "@/pages/factories-page"
+import { GeneralSettingsPage } from "@/pages/general-settings-page"
 import { McpPage } from "@/pages/mcp-page"
 import { SkillsPage } from "@/pages/skills-page"
 import { WorkspacesPage } from "@/pages/workspaces-page"
@@ -84,16 +85,28 @@ function ThreadView() {
 function Workspace() {
   const route = useRoute()
 
+  const inSettings = isSettingsRoute(route)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
+      const mod = e.metaKey || e.ctrlKey
+      if (mod && e.key.toLowerCase() === "n") {
         e.preventDefault()
         navigate({ name: "home" })
+      } else if (mod && e.key === ",") {
+        e.preventDefault()
+        navigate({ name: "settings" })
+      } else if (e.key === "Escape" && inSettings && !e.defaultPrevented) {
+        // Leave settings — but not while typing, or when a dialog/menu/popover is open.
+        const el = document.activeElement
+        const typing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el as HTMLElement)?.isContentEditable
+        const overlayOpen = document.querySelector('[role="dialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper]')
+        if (!typing && !overlayOpen) location.hash = getLastAppHash()
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  }, [inSettings])
 
   return (
     <SidebarInset className="h-svh overflow-hidden">
@@ -109,6 +122,7 @@ function Workspace() {
       {route.name === "workspaces" && <WorkspacesPage id={route.id} />}
       {route.name === "agents" && <AgentsPage id={route.id} />}
       {route.name === "factories" && <FactoriesPage id={route.id} />}
+      {route.name === "settings" && <GeneralSettingsPage />}
       {route.name === "skills" && <SkillsPage id={route.id} />}
       {route.name === "mcp" && <McpPage id={route.id} />}
     </SidebarInset>

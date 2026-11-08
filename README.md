@@ -23,11 +23,11 @@ The container publishes its port 5173 on the host at `127.0.0.1:5180`. `node_mod
 | Path | What |
 | --- | --- |
 | `src/App.tsx` | Shell and route switch (home, thread, workspaces, agents, factories) |
-| `src/lib/router.ts` | Hash router: `#/`, `#/t/:id`, `#/workspaces/:id`, `#/agents/:id`, `#/skills/:id`, `#/mcp/:id`, `#/factories/:id` |
-| `src/components/app-sidebar.tsx` | Navigation, factory list (on/off, active count), threads |
+| `src/lib/router.ts` | Hash router: `#/`, `#/t/:id`, `#/factories/:id`, and settings at `#/settings[/workspaces|agents|skills|mcp/:id]` |
+| `src/components/app-sidebar.tsx` | Main mode: new thread, factories, threads. Settings mode: General, Workspaces, Agents, Skills, MCP servers |
 | `src/components/chat/` | Triage home, composer (prompt + mic + send only), message list |
 | `src/components/manage/` | Shared editors: icon picker, agent avatar, skills/MCP checklists, memory, list+editor layout |
-| `src/pages/` | Workspaces, Agents, Skills, MCP servers and Factories (Kanban) pages |
+| `src/pages/` | Factories (Kanban) and the settings pages: General (appearance, shortcuts), Workspaces, Agents, Skills, MCP servers |
 | `src/data/mock.ts` | Seed workspaces, agents, factories, threads; skill/MCP/model catalogs; canned Triage replies |
 | `src/data/store.tsx` | In-memory store (CRUD per collection) and simulated streaming |
 | `src/themes/` | Theme tokens and registry |
@@ -35,6 +35,7 @@ The container publishes its port 5173 on the host at `127.0.0.1:5180`. `node_mod
 ## Concepts
 
 - **Triage**: the home composer is just a prompt. Triage picks the workspace, agent and model.
+- **Settings** (`⌘,`, `Esc` to leave): General (theme and shortcuts) plus Workspaces, Agents, Skills and MCP servers.
 - **Workspaces**: icon, folders, instructions, linked tracker (GitHub Issues, Jira, Linear), skills, MCP servers and memory.
 - **Agents**: photo, name, description, default model, system prompt, skills, MCP servers and memory. These use the same editor components as workspaces.
 - **Skills**: name, description and SKILL.md instructions (edit and preview). Built-in skills are read-only; duplicate one to customize it.
