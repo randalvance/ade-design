@@ -24,6 +24,12 @@ Only these run on the host:
 
 If the container isn't running, start it with `devcontainer up`. Don't fall back to running the command on the host.
 
+## Git: always push to `main`
+
+In this repo, commit and push directly to `main`. Don't open feature branches or pull requests. When working in a worktree or on another branch, push the commits straight to `main` (`git push origin HEAD:main`) instead of pushing the branch.
+
+Before pushing, run `git fetch origin` and rebase onto `origin/main` if it has moved. Never force-push `main`.
+
 ## Project notes
 
 - See `README.md` for the stack, layout and how to add a theme.
