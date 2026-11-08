@@ -151,7 +151,7 @@ function McpEditor({ server: m }: { server: McpServer }) {
 
       <Section
         title="Connection"
-        description="How Primepaw starts or reaches this server."
+        description="How Warlock starts or reaches this server."
         action={
           <Tabs value={m.transport} onValueChange={(v) => patch({ transport: v as McpTransport, status: "disconnected" })}>
             <TabsList className="h-8">

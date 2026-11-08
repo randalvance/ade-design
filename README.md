@@ -1,6 +1,6 @@
-# primepaw-design
+# ade-design
 
-UI prototype for **Primepaw**, an Agentic Development Environment. It runs entirely on mock data; this repo is for working out the UI.
+UI prototype for **Warlock**, an Agentic Development Environment. It runs entirely on mock data; this repo is for working out the UI.
 
 ## Stack
 

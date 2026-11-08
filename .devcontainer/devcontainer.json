@@ -1,5 +1,5 @@
 {
-  "name": "primepaw-design",
+  "name": "ade-design",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
 
   // Mount the repo at the same path as on the host, so paths in logs and errors match.
@@ -8,7 +8,7 @@
 
   "mounts": [
     // Linux node_modules live in a volume so they never mix with a host (macOS) install.
-    "source=primepaw-design-node_modules-${devcontainerId},target=${localWorkspaceFolder}/node_modules,type=volume"
+    "source=ade-design-node_modules-${devcontainerId},target=${localWorkspaceFolder}/node_modules,type=volume"
   ],
 
   // Dev server: container port 5173 is published on the host at http://localhost:5180.

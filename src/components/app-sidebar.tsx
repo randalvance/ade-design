@@ -65,7 +65,7 @@ export function AppSidebar() {
             <WorkflowIcon className="size-4" />
           </div>
           <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-sm font-semibold">Primepaw</span>
+            <span className="truncate text-sm font-semibold">Warlock</span>
             <span className="truncate text-xs text-muted-foreground">Agentic workspace</span>
           </div>
         </div>
